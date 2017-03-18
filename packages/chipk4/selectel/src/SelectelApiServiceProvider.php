@@ -27,6 +27,11 @@ class SelectelApiServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->singleton(CloudStorage::class, function () {
+            $api = new Api(config('selectel-api'));
+            return new CloudStorage($api);
+        });
+
+        $this->app->alias(CloudStorage::class, 'selectel-api');
     }
 }
