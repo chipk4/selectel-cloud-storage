@@ -25,7 +25,7 @@ return [
     /*
      * Default storage url
      */
-    'storageUrl' => env('SELECTEL_STORAGE_URL'),
+    'storageUrl' => env('SELECTEL_STORAGE_URL', ''),
 
     /*
      * Response view
