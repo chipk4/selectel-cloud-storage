@@ -249,4 +249,9 @@ class Api
     {
         return $this->storageUrl;
     }
+
+    public function getReturnView()
+    {
+        return $this->returnView;
+    }
 }
