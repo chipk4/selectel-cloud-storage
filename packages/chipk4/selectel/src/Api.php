@@ -6,24 +6,94 @@ class Api
     private $apiEndpoint;
     private $apiPass;
     private $timeout;
-    private $token;
+    private $token = '';
+    private $storageUrl = '';
+    private $returnView;
 
     private $requestSuccessful = false;
     private $lastError         = '';
     private $lastResponse      = array();
     private $lastRequest       = array();
 
+    /**
+     * User login in header for auth
+     */
+    const HEADER_AUTH_USER = 'X-Auth-User';
+
+    /**
+     * User password in header for auth
+     */
+    const HEADER_AUTH_PASSWORD = 'X-Auth-Key';
+
+    /**
+     * Auth identification in response
+     */
+    const HEADER_TOKEN = 'X-Auth-Token';
+
+    /**
+     * Storage url
+     */
+    const HEADER_STORAGE_URL = 'X-Storage-Url';
+
+    /**
+     * Api constructor.
+     * @param array $config
+     */
     public function __construct(array $config)
     {
         $this->apiKey = $config['authUser'];
         $this->apiPass = $config['authKey'];
         $this->apiEndpoint = $config['apiUrl'];
         $this->timeout = $config['timeout'];
+        $this->returnView = $config['returnView'];
+        $this->storageUrl = $config['storageUrl'];
     }
 
-    protected function auth()
+    /**
+     * TODO: add exception if Forbidden
+     * @return mixed
+     */
+    public function auth()
     {
+        $auth = [
+            self::HEADER_AUTH_USER . ':' . $this->apiKey,
+            self::HEADER_AUTH_PASSWORD . ':' . $this->apiPass
+        ];
 
+        $result = $this->makeRequest('get', [], $auth, $this->apiEndpoint);
+
+        return $this->token = $result[self::HEADER_TOKEN];
+    }
+
+    /**
+     * Without auth
+     *
+     * @param $http_verb
+     * @param array $args
+     * @return array|false
+     */
+    public function makePublicRequest($http_verb, $args = array())
+    {
+        return $this->makeRequest($http_verb, $args, array(), $this->storageUrl);
+    }
+
+    /**
+     * With auth
+     *
+     * @param string $http_verb
+     * @param array $args
+     * @param array $headers
+     * @return array|false
+     */
+    public function makePrivateRequest($http_verb, $args = array(), $headers = array())
+    {
+        if(!$this->getToken()) {
+            $this->auth();
+        }
+
+        return $this->makeRequest($http_verb, $args, array_merge($headers, [
+            self::HEADER_TOKEN . ': ' . $this->token
+        ]), $this->storageUrl);
     }
 
     /**
@@ -31,25 +101,15 @@ class Api
      * @param  string $http_verb The HTTP verb to use: get, post, put, patch, delete
      * @param  array $args Assoc array of parameters to be passed
      * @param  array $headers array of parameters to be passed in header
+     * @param  string $endPoint
      * @return array|false Assoc array of decoded result
      * @throws \Exception
      */
-    protected function makeRequest($http_verb, $args = array(), $headers = array())
+    protected function makeRequest($http_verb, $args = array(), $headers = array(), $endPoint)
     {
         if (!function_exists('curl_init') || !function_exists('curl_setopt')) {
             throw new \Exception("cURL support is required, but can't be found.");
         }
-
-        $baseHeader = [
-            'Accept: application/vnd.api+json',
-            'Content-Type: application/vnd.api+json',
-            'X-Auth-User:' . $this->apiKey,
-            'X-Auth-Key:' . $this->apiPass
-        ];
-
-        $headers = array_merge($baseHeader, $headers);
-
-        $url = $this->apiEndpoint;
 
         $this->lastError = '';
         $this->requestSuccessful = false;
@@ -62,13 +122,13 @@ class Api
 
         $this->lastRequest = array(
             'method'  => $http_verb,
-            'url'     => $url,
+            'url'     => $endPoint,
             'body'    => '',
             'timeout' => $this->timeout,
         );
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_URL, $endPoint);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_USERAGENT, 'chipk4/selectel-api(github.com/chipk4/selectel_cloud_storage/)');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -83,7 +143,7 @@ class Api
         switch ($http_verb) {
             case 'get':
                 $query = http_build_query($args, '', '&');
-                curl_setopt($ch, CURLOPT_URL, $url . '?' . $query);
+                curl_setopt($ch, CURLOPT_URL, $endPoint . '?' . $query);
                 break;
         }
 
@@ -94,7 +154,6 @@ class Api
             $this->lastError = curl_error($ch);
         } else {
             $headerSize = $response['headers']['header_size'];
-
             $response['httpHeaders'] = $this->getHeadersAsArray(substr($responseContent, 0, $headerSize));
             $response['body'] = substr($responseContent, $headerSize);
 
@@ -105,11 +164,10 @@ class Api
 
         curl_close($ch);
 
-        $formattedResponse = $this->formatResponse($response);
-
-        $this->determineSuccess($response, $formattedResponse, $this->timeout);
-
-        return $formattedResponse;
+        if($response['body']) {
+            return $response['body'];
+        }
+        return $response['httpHeaders'];
     }
 
     /**
@@ -154,11 +212,6 @@ class Api
     /**
      * Extract all rel => URL pairs from the provided Link header value
      *
-     * Mailchimp only implements the URI reference and relation type from
-     * RFC 5988, so the value of the header is something like this:
-     *
-     * 'https://us13.api.mailchimp.com/schema/3.0/Lists/Instance.json; rel="describedBy", <https://us13.admin.mailchimp.com/lists/members/?id=XXXX>; rel="dashboard"'
-     *
      * @param string $linkHeaderAsString
      * @return array
      */
@@ -176,67 +229,16 @@ class Api
     }
 
     /**
-     * Decode the response and format any error messages for debugging
-     * @param array $response The response from the curl request
-     * @return array|false    The JSON decoded into an array
+     * TODO: check for token expire date
+     * @return string
      */
-    private function formatResponse($response)
+    protected function getToken()
     {
-        $this->lastResponse = $response;
-
-        if (!empty($response['body'])) {
-            return json_decode($response['body'], true);
-        }
-
-        return false;
+        return $this->token;
     }
 
-    /**
-     * Check if the response was successful or a failure. If it failed, store the error.
-     * @param array $response The response from the curl request
-     * @param array|false $formattedResponse The response body payload from the curl request
-     * @param int $timeout The timeout supplied to the curl request.
-     * @return bool     If the request was successful
-     */
-    private function determineSuccess($response, $formattedResponse, $timeout)
+    public function getStorageUrl()
     {
-        $status = $this->findHTTPStatus($response, $formattedResponse);
-
-        if ($status >= 200 && $status <= 299) {
-            $this->requestSuccessful = true;
-            return true;
-        }
-
-        if (isset($formattedResponse['detail'])) {
-            $this->lastError = sprintf('%d: %s', $formattedResponse['status'], $formattedResponse['detail']);
-            return false;
-        }
-
-        if( $timeout > 0 && $response['headers'] && $response['headers']['total_time'] >= $timeout ) {
-            $this->lastError = sprintf('Request timed out after %f seconds.', $response['headers']['total_time'] );
-            return false;
-        }
-
-        $this->lastError = 'Unknown error, call getLastResponse() to find out what happened.';
-        return false;
-    }
-
-    /**
-     * Find the HTTP status code from the headers or API response body
-     * @param array $response The response from the curl request
-     * @param array|false $formattedResponse The response body payload from the curl request
-     * @return int  HTTP status code
-     */
-    private function findHTTPStatus($response, $formattedResponse)
-    {
-        if (!empty($response['headers']) && isset($response['headers']['http_code'])) {
-            return (int) $response['headers']['http_code'];
-        }
-
-        if (!empty($response['body']) && isset($formattedResponse['status'])) {
-            return (int) $formattedResponse['status'];
-        }
-
-        return 418;
+        return $this->storageUrl;
     }
 }
