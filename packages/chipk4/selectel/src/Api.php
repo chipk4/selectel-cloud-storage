@@ -85,9 +85,9 @@ class Api
      * @param array $args
      * @return array|false
      */
-    public function makePublicRequest($http_verb, $args = array())
+    public function makePublicRequest($http_verb, $args = array(), $headers = array(), $additionalUrlPath = '')
     {
-        return $this->makeRequest($http_verb, $args, array(), $this->storageUrl);
+        return $this->makeRequest($http_verb, $args, $headers, $this->storageUrl . '/' . $additionalUrlPath);
     }
 
     /**
@@ -165,10 +165,13 @@ class Api
             case 'put':
                 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
                 break;
+            case 'delete':
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+                break;
         }
 
         $responseContent = curl_exec($ch);
-        
+
         $response['headers'] = curl_getinfo($ch);
 
         if ($responseContent === false) {
