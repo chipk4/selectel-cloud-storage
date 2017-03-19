@@ -89,7 +89,7 @@ class CloudStorage
         if(!$privateContainer) {
             return $this->api->makePublicRequest('get', [], [], $container.'/'.$file);
         }
-        return $this->api->makePrivateRequest('get');
+        return $this->api->makePrivateRequest('get', [], [], $container.'/'.$file);
     }
 
     public function storeFile()
