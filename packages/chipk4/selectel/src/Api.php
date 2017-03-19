@@ -62,6 +62,10 @@ class Api
 
         $result = $this->makeRequest('get', [], $auth, $this->apiEndpoint);
 
+        if(!$this->getStorageUrl()) {
+            $this->storageUrl = $result[self::HEADER_STORAGE_URL];
+        }
+
         return $this->token = $result[self::HEADER_TOKEN];
     }
 
@@ -105,7 +109,7 @@ class Api
      * @return array|false Assoc array of decoded result
      * @throws \Exception
      */
-    protected function makeRequest($http_verb, $args = array(), $headers = array(), $endPoint)
+    protected function  makeRequest($http_verb, $args = array(), $headers = array(), $endPoint)
     {
         if (!function_exists('curl_init') || !function_exists('curl_setopt')) {
             throw new \Exception("cURL support is required, but can't be found.");
@@ -145,11 +149,15 @@ class Api
                 $query = http_build_query($args, '', '&');
                 curl_setopt($ch, CURLOPT_URL, $endPoint . '?' . $query);
                 break;
+            case 'head':
+                curl_setopt($ch, CURLOPT_NOBODY, true);
+                break;
         }
 
         $responseContent = curl_exec($ch);
 
         $response['headers'] = curl_getinfo($ch);
+
         if ($responseContent === false) {
             $this->lastError = curl_error($ch);
         } else {
