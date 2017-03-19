@@ -31,7 +31,7 @@ return [
      * Response view
      * Can be in json or xml
      */
-    'returnView' => 'json',
+    'returnView' => env('SELECTEL_RETURN_VIEW', 'json'),
 
 
 ];
