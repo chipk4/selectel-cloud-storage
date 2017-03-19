@@ -2,6 +2,7 @@
 
 namespace Chipk4\Selectel;
 
+use Chipk4\Selectel\Models\Container;
 use Illuminate\Support\ServiceProvider;
 
 class SelectelApiServiceProvider extends ServiceProvider
@@ -13,11 +14,7 @@ class SelectelApiServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/selectel-api.php', 'selectel-api');
-
-        $this->publishes([
-            __DIR__.'/../config/selectel-api.php' => config_path('selectel-api.php')
-        ]);
+        $this->registerConfig();
     }
 
     /**
@@ -33,5 +30,17 @@ class SelectelApiServiceProvider extends ServiceProvider
         });
 
         $this->app->alias(CloudStorage::class, 'selectel-api');
+    }
+
+    /**
+     * TODO: check for correct values in config file
+     */
+    protected function registerConfig()
+    {
+        $this->mergeConfigFrom(__DIR__ . '/../config/selectel-api.php', 'selectel-api');
+
+        $this->publishes([
+            __DIR__ . '/../config/selectel-api.php' => config_path('selectel-api.php')
+        ]);
     }
 }

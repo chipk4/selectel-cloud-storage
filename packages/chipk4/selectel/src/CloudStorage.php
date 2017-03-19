@@ -13,9 +13,12 @@ class CloudStorage
         $this->api = $api;
     }
 
+    /**
+     * @return array|false
+     */
     public function storageInfo()
     {
-        
+        return $this->api->makePrivateRequest('head');
     }
 
     public function containerInfo()
@@ -25,7 +28,7 @@ class CloudStorage
 
     public function containerList()
     {
-
+        return $this->api->makePrivateRequest('get', ['format' => 'json']);
     }
 
     public function createContainer()
@@ -48,11 +51,18 @@ class CloudStorage
         
     }
 
-    public function fileList()
+    /**
+     * @param string $container
+     * @return array
+     */
+    public function fileList($container)
     {
-        
+        return $this->api->makePrivateRequest('get', ['format' => 'json'], [], $container);
     }
 
+    /**
+     * Check if container is public
+     */
     public function getFile()
     {
         
