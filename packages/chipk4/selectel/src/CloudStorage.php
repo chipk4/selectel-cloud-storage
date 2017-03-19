@@ -21,19 +21,35 @@ class CloudStorage
         return $this->api->makePrivateRequest('head');
     }
 
-    public function containerInfo()
+    /**
+     * @param string $name Container name
+     * @return array|false
+     */
+    public function containerInfo($name)
     {
-        
+        return $this->api->makePrivateRequest('head', [], [], $name);
     }
 
-    public function containerList()
+    public function storageContainerList()
     {
-        return $this->api->makePrivateRequest('get', ['format' => 'json']);
+        return $this->api->makePrivateRequest('get', [
+            'format' => $this->api->getReturnView()
+        ]);
     }
 
-    public function createContainer()
+    /**
+     * @param string $name This is a container name
+     * @param string $visible Can be, public, private, gallery
+     * @return array|false
+     */
+    public function createContainer($name, $visible = 'public')
     {
-        
+//        return $this->api->makePrivateRequest(
+//            'put',
+//            [],
+//            [Api::HEADER_CONTAINER_TYPE.': '.$visible],
+//            $name
+//        );
     }
 
     public function changeContainerInfo()
