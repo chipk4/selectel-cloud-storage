@@ -57,9 +57,9 @@ class CloudStorage
         
     }
 
-    public function deleteContainer()
+    public function deleteContainer($name)
     {
-        
+
     }
 
     public function gallery()
@@ -68,20 +68,28 @@ class CloudStorage
     }
 
     /**
-     * @param string $container
+     * @param string $name
      * @return array
      */
-    public function fileList($container)
+    public function containerFileList($name)
     {
-        return $this->api->makePrivateRequest('get', ['format' => 'json'], [], $container);
+        return $this->api->makePrivateRequest('get', ['format' => $this->api->getReturnView()], [], $name);
     }
 
     /**
      * Check if container is public
+     *
+     * @param string $container
+     * @param string $file
+     * @param boolean $privateContainer
+     * @return array|false
      */
-    public function getFile()
+    public function getFile($container, $file, $privateContainer=false)
     {
-        
+        if(!$privateContainer) {
+            return $this->api->makePublicRequest('get', [], [], $container.'/'.$file);
+        }
+        return $this->api->makePrivateRequest('get');
     }
 
     public function storeFile()
