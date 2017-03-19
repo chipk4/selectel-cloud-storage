@@ -1,5 +1,12 @@
 <?php namespace Chipk4\Selectel;
 
+/**
+ * TODO: add http status code
+ *
+ * Class Api
+ * @package Chipk4\Selectel
+ */
+
 class Api
 {
     private $apiKey;
@@ -34,6 +41,8 @@ class Api
      * Storage url
      */
     const HEADER_STORAGE_URL = 'X-Storage-Url';
+
+    const HEADER_CONTAINER_TYPE = 'X-Container-Meta-Type';
 
     /**
      * Api constructor.
@@ -87,9 +96,10 @@ class Api
      * @param string $http_verb
      * @param array $args
      * @param array $headers
+     * @param string $additionalUrlPath
      * @return array|false
      */
-    public function makePrivateRequest($http_verb, $args = array(), $headers = array())
+    public function makePrivateRequest($http_verb, $args = array(), $headers = array(), $additionalUrlPath = '')
     {
         if(!$this->getToken()) {
             $this->auth();
@@ -97,7 +107,7 @@ class Api
 
         return $this->makeRequest($http_verb, $args, array_merge($headers, [
             self::HEADER_TOKEN . ': ' . $this->token
-        ]), $this->storageUrl);
+        ]), $this->storageUrl . '/' . $additionalUrlPath);
     }
 
     /**
@@ -152,10 +162,13 @@ class Api
             case 'head':
                 curl_setopt($ch, CURLOPT_NOBODY, true);
                 break;
+            case 'put':
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+                break;
         }
 
         $responseContent = curl_exec($ch);
-
+        
         $response['headers'] = curl_getinfo($ch);
 
         if ($responseContent === false) {
@@ -202,38 +215,12 @@ class Api
                 continue;
             }
 
-            list($key, $value) = explode(': ', $line);
+            $arrResult = explode(': ', $line);
 
-            if ($key == 'Link') {
-                $value = array_merge(
-                    array('_raw' => $value),
-                    $this->getLinkHeaderAsArray($value)
-                );
-            }
-
-            $headers[$key] = $value;
+            $headers[$arrResult[0]] = isset($arrResult[1]) ? $arrResult[1] : '';
         }
 
         return $headers;
-    }
-
-    /**
-     * Extract all rel => URL pairs from the provided Link header value
-     *
-     * @param string $linkHeaderAsString
-     * @return array
-     */
-    private function getLinkHeaderAsArray($linkHeaderAsString)
-    {
-        $urls = array();
-
-        if (preg_match_all('/<(.*?)>\s*;\s*rel="(.*?)"\s*/', $linkHeaderAsString, $matches)) {
-            foreach ($matches[2] as $i => $relName) {
-                $urls[$relName] = $matches[1][$i];
-            }
-        }
-
-        return $urls;
     }
 
     /**
