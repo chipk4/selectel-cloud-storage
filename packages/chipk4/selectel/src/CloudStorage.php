@@ -92,14 +92,19 @@ class CloudStorage
         return $this->api->makePrivateRequest('get', [], [], $container.'/'.$file);
     }
 
-    public function storeFile()
+    public function storeFile($container, $filePath, $fileName)
     {
-        
+        return $this->api->makePrivateRequest(
+            'put',
+            ['file' => $filePath],
+            ['Content-Length: ' . filesize($filePath)],
+            $container.'/'.$fileName
+        );
     }
 
     public function unpackArchive($isInBackground=false)
     {
-        
+
     }
 
     public function changeFileInfo()
