@@ -74,7 +74,6 @@ class Api
         if(!$this->getStorageUrl()) {
             $this->storageUrl = $result[self::HEADER_STORAGE_URL];
         }
-
         return $this->token = $result[self::HEADER_TOKEN];
     }
 
@@ -99,7 +98,7 @@ class Api
      * @param string $additionalUrlPath
      * @return array|false
      */
-    public function makePrivateRequest($http_verb, $args = array(), $headers = array(), $additionalUrlPath = '')
+    public function makePrivateRequest($http_verb, array $args, array $headers, $additionalUrlPath = '')
     {
         if(!$this->getToken()) {
             $this->auth();
@@ -164,6 +163,8 @@ class Api
                 break;
             case 'put':
                 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+                curl_setopt($ch, CURLOPT_PUT, true);
+                $this->attachRequestPayload($ch, $args);
                 break;
             case 'delete':
                 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
@@ -171,6 +172,10 @@ class Api
         }
 
         $responseContent = curl_exec($ch);
+
+        if(isset($fp)) {
+            fclose($fp);
+        }
 
         $response['headers'] = curl_getinfo($ch);
 
@@ -224,6 +229,20 @@ class Api
         }
 
         return $headers;
+    }
+
+    /**
+     * Encode the data and attach it to the request
+     * @param   resource $ch cURL session handle, used by reference
+     * @param   array $data Assoc array of data to attach
+     */
+    private function attachRequestPayload(&$ch, array $data)
+    {
+        if(key_exists('file', $data)) {
+            $fp = fopen($data['file'], "rb");
+            curl_setopt($ch, CURLOPT_INFILE, $fp);
+            curl_setopt($ch, CURLOPT_INFILESIZE, filesize($data['file']));
+        }
     }
 
     /**
