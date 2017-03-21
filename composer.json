@@ -1,0 +1,14 @@
+{
+    "name": "chipk4/selectel",
+    "description": "Package for Selectel API cloud storage (selectel.com)",
+    "authors": [
+        {
+            "name": "Andrew Chirskiy",
+            "email": "chipk4@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": "^5.6 || ^7.0"
+    }
+}
