@@ -6,6 +6,7 @@
         "selectel"
     ],
     "homepage": "https://github.com/chipk4/selectel-cloud-storage",
+    "license": "MIT",
     "authors": [
         {
             "name": "Andrew Chirskiy",
