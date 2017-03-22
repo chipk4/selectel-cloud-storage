@@ -1,9 +1,10 @@
 <?php namespace Chipk4\Selectel;
 
+use Chipk4\Selectel\Exceptions\SelectelAuthFailedException;
+
 /**
- * TODO: add http status code
- *
  * Class Api
+ *
  * @package Chipk4\Selectel
  */
 
@@ -60,7 +61,6 @@ class Api
 
     /**
      * TODO: add exception if Forbidden
-     * @return mixed
      */
     public function auth()
     {
@@ -71,10 +71,17 @@ class Api
 
         $result = $this->makeRequest('get', [], $auth, $this->apiEndpoint);
 
+        if($result->getStatusCode() == 403) {
+            throw new SelectelAuthFailedException('Selectel authorization failed. Please check your login and password');
+        }
+
         if(!$this->getStorageUrl()) {
             $this->storageUrl = $result[self::HEADER_STORAGE_URL];
         }
-        return $this->token = $result[self::HEADER_TOKEN];
+
+        $headers = $result->getHeaders();
+
+        $this->token = $headers[self::HEADER_TOKEN];
     }
 
     /**
@@ -82,7 +89,7 @@ class Api
      *
      * @param $http_verb
      * @param array $args
-     * @return array|false
+     * @return Response
      */
     public function makePublicRequest($http_verb, $args = array(), $headers = array(), $additionalUrlPath = '')
     {
@@ -96,7 +103,7 @@ class Api
      * @param array $args
      * @param array $headers
      * @param string $additionalUrlPath
-     * @return array|false
+     * @return Response
      */
     public function makePrivateRequest($http_verb, array $args, array $headers, $additionalUrlPath = '')
     {
@@ -115,7 +122,7 @@ class Api
      * @param  array $args Assoc array of parameters to be passed
      * @param  array $headers array of parameters to be passed in header
      * @param  string $endPoint
-     * @return array|false Assoc array of decoded result
+     * @return Response
      * @throws \Exception
      */
     protected function  makeRequest($http_verb, $args = array(), $headers = array(), $endPoint)
@@ -173,62 +180,20 @@ class Api
 
         $responseContent = curl_exec($ch);
 
-        if(isset($fp)) {
-            fclose($fp);
-        }
-
-        $response['headers'] = curl_getinfo($ch);
+//TODO: refactor it !
+//        if(isset($fp)) {
+//            fclose($fp);
+//        }
 
         if ($responseContent === false) {
             $this->lastError = curl_error($ch);
-        } else {
-            $headerSize = $response['headers']['header_size'];
-            $response['httpHeaders'] = $this->getHeadersAsArray(substr($responseContent, 0, $headerSize));
-            $response['body'] = substr($responseContent, $headerSize);
-
-            if (isset($response['headers']['request_header'])) {
-                $this->lastRequest['headers'] = $response['headers']['request_header'];
-            }
         }
+
+        $result = new Response($ch, $responseContent);
 
         curl_close($ch);
 
-        if($response['body']) {
-            return $response['body'];
-        }
-        return $response['httpHeaders'];
-    }
-
-    /**
-     * Get the HTTP headers as an array of header-name => header-value pairs.
-     *
-     * The "Link" header is parsed into an associative array based on the
-     * rel names it contains. The original value is available under
-     * the "_raw" key.
-     *
-     * @param string $headersAsString
-     * @return array
-     */
-    private function getHeadersAsArray($headersAsString)
-    {
-        $headers = array();
-
-        foreach (explode("\r\n", $headersAsString) as $i => $line) {
-            if ($i === 0) { // HTTP code
-                continue;
-            }
-
-            $line = trim($line);
-            if (empty($line)) {
-                continue;
-            }
-
-            $arrResult = explode(': ', $line);
-
-            $headers[$arrResult[0]] = isset($arrResult[1]) ? $arrResult[1] : '';
-        }
-
-        return $headers;
+        return $result;
     }
 
     /**
