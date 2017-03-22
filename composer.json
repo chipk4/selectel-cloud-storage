@@ -1,14 +1,25 @@
 {
     "name": "chipk4/selectel",
     "description": "Package for Selectel API cloud storage (selectel.com)",
+    "keywords": [
+        "laravel",
+        "selectel"
+    ],
+    "homepage": "https://github.com/chipk4/selectel-cloud-storage",
     "authors": [
         {
             "name": "Andrew Chirskiy",
-            "email": "chipk4@gmail.com"
+            "email": "chipk4@gmail.com",
+            "role": "Developer"
         }
     ],
     "minimum-stability": "dev",
     "require": {
-        "php": "^5.6 || ^7.0"
+        "php": "~5.6|!7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Chipk4\\Selectel\\": "src"
+        }
     }
 }
