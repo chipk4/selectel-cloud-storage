@@ -1,6 +1,6 @@
 {
     "name": "chipk4/selectel",
-    "description": "Package for Selectel API cloud storage (selectel.com)",
+    "description": "Laravel Package for Selectel API cloud storage (selectel.com)",
     "keywords": [
         "laravel",
         "selectel"

@@ -76,7 +76,7 @@ class Api
         }
 
         if(!$this->getStorageUrl()) {
-            $this->storageUrl = $result[self::HEADER_STORAGE_URL];
+            $this->storageUrl = $result->getHeaders()[self::HEADER_STORAGE_URL];
         }
 
         $headers = $result->getHeaders();
