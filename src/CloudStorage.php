@@ -14,16 +14,16 @@ class CloudStorage
     }
 
     /**
-     * @return array|false
+     * @return Response
      */
     public function storageInfo()
     {
-        return $this->api->makePrivateRequest('head');
+        return $this->api->makePrivateRequest('head', [], []);
     }
 
     /**
      * @param string $name Container name
-     * @return array|false
+     * @return Response
      */
     public function containerInfo($name)
     {
@@ -34,7 +34,7 @@ class CloudStorage
     {
         return $this->api->makePrivateRequest('get', [
             'format' => $this->api->getReturnView()
-        ]);
+        ], []);
     }
 
     /**
@@ -69,7 +69,7 @@ class CloudStorage
 
     /**
      * @param string $name
-     * @return array
+     * @return Response
      */
     public function containerFileList($name)
     {
@@ -82,7 +82,7 @@ class CloudStorage
      * @param string $container
      * @param string $file
      * @param boolean $privateContainer
-     * @return array|false
+     * @return Response
      */
     public function getFile($container, $file, $privateContainer=false)
     {
