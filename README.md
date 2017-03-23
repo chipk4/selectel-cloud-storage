@@ -102,6 +102,7 @@ return [
 ```
 
 ## Usage
+#### With Facade
 
 ```php
   use SelectelApi;
@@ -109,6 +110,16 @@ return [
   SelectelApi::getFile('container', 'fileName');
 ```
 
+#### With Service Container
+
+```php
+    use Chipk4\Selectel\CloudStorage;
+    
+    public function test(CloudStorage $storage) 
+    {
+        $storage->getFile('container', 'fileName');
+    }
+```
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
