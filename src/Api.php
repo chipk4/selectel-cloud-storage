@@ -219,13 +219,27 @@ class Api
         return $this->token;
     }
 
+    /**
+     * @return string
+     */
     public function getStorageUrl()
     {
         return $this->storageUrl;
     }
 
+    /**
+     * @return mixed
+     */
     public function getReturnView()
     {
         return $this->returnView;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLastError()
+    {
+        return $this->lastError;
     }
 }
