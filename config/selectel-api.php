@@ -2,7 +2,7 @@
 
 return [
     /*
-     * This is agreement number from system
+     * This is user login. You can use any cloud storage user
      */
     'authUser' => env('SELECTEL_LOGIN'),
 
