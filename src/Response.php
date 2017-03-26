@@ -4,6 +4,8 @@ use Chipk4\Selectel\Contract\Response as iResponse;
 
 class Response implements iResponse
 {
+    const CURL_RESOURCE_TYPE = 'curl';
+
     private $resource;
     private $headers = array();
     private $response;
@@ -16,16 +18,21 @@ class Response implements iResponse
      */
     public function __construct($resource, $body)
     {
-        if(false === is_resource($resource)) {
+        if(false === is_resource($resource) || get_resource_type($resource) != self::CURL_RESOURCE_TYPE) {
             throw new \InvalidArgumentException(
                 sprintf(
-                    'Argument must be a valid resource type. %s given.',
+                    'Argument must be a valid CURL resource type. %s given.',
                     gettype($resource)
                 )
             );
         }
 
         $this->init($resource, $body);
+    }
+
+    public function __destruct()
+    {
+        curl_close($this->resource);
     }
 
     /**
@@ -62,8 +69,8 @@ class Response implements iResponse
 
     protected function init($resource, $response)
     {
+        $this->resource = curl_copy_handle($resource);
         $this->body = substr($response, curl_getinfo($resource, CURLINFO_HEADER_SIZE));
-        $this->resource = $resource;
         $this->response = $response;
     }
 }
